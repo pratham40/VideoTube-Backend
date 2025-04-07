@@ -19,7 +19,8 @@ const uploadOnCloudinary = async (localFilePath) => {
         }
         const response = await cloudinary.uploader.upload(localFilePath,
             {
-                resource_type: "auto"
+                resource_type: "auto",
+                folder:"videotube"
             }
         )
         console.log(`file is uploaded successfully ${response.url}`);
@@ -32,4 +33,19 @@ const uploadOnCloudinary = async (localFilePath) => {
 }
 
 
-export { uploadOnCloudinary }
+const destroyOnCloudinary = async (publicId) => {
+    try {
+        const response = await cloudinary.uploader.destroy(publicId,{
+            resource_type: "auto",
+            folder:"videotube"
+        });
+        return response;
+    } catch (error) {
+        return null;
+    }
+}
+
+export { uploadOnCloudinary,
+    destroyOnCloudinary
+    
+ }

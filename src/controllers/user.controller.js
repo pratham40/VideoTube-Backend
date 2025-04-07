@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/ApiError.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { User } from "../models/user.model.js"
-import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { destroyOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from 'jsonwebtoken'
 
@@ -79,8 +79,14 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     const user = await User.create({
         fullName,
-        avatar: avatar.url,
-        coverImage: coverImage?.url || "",
+        avatar:{
+            public_id:avatar.public_id,
+            secure_url:avatar.secure_url
+        },
+        coverImage:{
+            public_id:coverImage?.public_id || "",
+            secure_url:coverImage?.secure_url || ""
+        },
         email,
         password,
         username: username.toLowerCase()
@@ -289,6 +295,91 @@ const updateAccountDetail = asyncHandler(async(req,res,next)=>{
     )
 })
 
+
+const updateUserAvatar = asyncHandler(async(req,res,next)=>{
+    try {
+        const avatarLocalPath = req.file?.path
+    
+        if (!avatarLocalPath) {
+            throw new ApiError(400, "avatar is required")
+        }
+    
+    
+        const onResponseAfterDeleteOnClodinary=await destroyOnCloudinary(req.user.avatar.public_id)
+    
+        if (onResponseAfterDeleteOnClodinary?.result !== "ok") {
+            throw new ApiError(400, "error in deleting avatar from cloudinary")
+            
+        }
+    
+        const avatar = await uploadOnCloudinary(avatarLocalPath)
+    
+        if (!avatar.url) {
+            throw new ApiError(400, "error in uploading avatar")
+        }
+    
+        const user = await User.findByIdAndUpdate(req.user._id,{
+            $set:{
+                avatar:{
+                    public_id:avatar.public_id,
+                    secure_url:avatar.secure_url
+                }
+            }
+        },{
+            new:true
+        }).select("-password")
+    
+        return res.status(200).json(
+            new ApiResponse(200,user, "user avatar updated successfully")
+        )
+    } catch (error) {
+        throw new ApiError(400,error?.message || "error in updating avatar")   
+    }
+
+})
+
+const updateUserCoverImage = asyncHandler(async(req,res,next)=>{
+    try {
+        const coverImageLocalPath = req.file?.path
+
+        if (!coverImageLocalPath) {
+            throw new ApiError(400, "cover image is required")
+        }        
+
+        if (req.user.coverImage?.public_id) {
+            onResponseAfterDeleteOnClodinary=await destroyOnCloudinary(req.user.coverImage.public_id)
+    
+            if (onResponseAfterDeleteOnClodinary?.result !== "ok") {
+                throw new ApiError(400, "error in deleting cover image from cloudinary")
+                
+            }
+        }
+
+        const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+
+        if (!coverImage.url) {
+            throw new ApiError(400, "error in uploading cover image")
+        }
+
+        const user = await User.findByIdAndUpdate(req.user._id,{
+            $set:{
+                coverImage:{
+                    public_id:coverImage.public_id,
+                    secure_url:coverImage.secure_url
+                }
+            }
+        },{
+            new:true
+        }).select("-password")
+
+        return res.status(200).json(
+            new ApiResponse(200,user, "user cover image updated successfully")
+        )
+    } catch (error) {
+        throw new ApiError(400,error?.message || "error in updating cover image")   
+    }
+})
+
 export {
     registerUser,
     loginUser,
@@ -296,5 +387,7 @@ export {
     refreshAccessToken,
     changeCurrentPassword,
     getCurrentUser,
-    updateAccountDetail
+    updateAccountDetail,
+    updateUserAvatar,
+    updateUserCoverImage
 }
