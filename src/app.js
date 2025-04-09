@@ -20,9 +20,12 @@ app.use(morgan('dev'))
 
 import userRouter from "./routes/user.routes.js"
 
+import videoRouter from "./routes/video.route.js"
 //routes declaration
 
 app.use("/api/v1/user",userRouter)
+
+app.use("/api/v1/videos",videoRouter)
 
 
 
