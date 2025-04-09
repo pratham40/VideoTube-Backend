@@ -53,10 +53,16 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
     //check for images avatar
 
+    console.log('====================================');
+    console.log(req.files);
+    console.log('====================================');
     const avatarLocalPath = req.files?.avatar[0]?.path
 
     let coverImageLocalPath;
 
+    console.log('====================================');
+    console.log(avatarLocalPath);
+    console.log('====================================');
 
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverImageLocalPath = req.files?.coverImage[0]?.path
@@ -71,6 +77,10 @@ const registerUser = asyncHandler(async (req, res, next) => {
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+
+    console.log('====================================');
+    console.log(avatar);
+    console.log('====================================');
 
     if (!avatar) {
         throw new ApiError(400, "avatar is required 1")
