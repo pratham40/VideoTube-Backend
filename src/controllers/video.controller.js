@@ -8,7 +8,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandler(async (req,res,next) => {
     try {
-        const {page=1,limit=10,query,sortBy,sortType=1,userId=req.user._id}=req.query
+        const {page=1,limit=10,query,sortBy="createdAt",sortType=1,userId=req.user._id}=req.query
         const user = await User.findById(userId)
     
         if (!user) {
@@ -16,12 +16,16 @@ const getAllVideos = asyncHandler(async (req,res,next) => {
         }
 
 
+        console.log('====================================');
+        console.log(userId);
+        console.log('====================================');
         // TODO:
-        const getAllVideosAggreate = await Video.aggregate(
+        
+        const getAllVideosAggreate = Video.aggregate(
             [
                 {
                     $match:{
-                        videoOwner:new mongoose.Types.ObjectId(userId),
+                        owner:new mongoose.Types.ObjectId(userId),
                         $or:[
                             {
                                 title:{
@@ -37,24 +41,31 @@ const getAllVideos = asyncHandler(async (req,res,next) => {
                     }
                 },
                 {
-                    $sort:{
-                        [sortBy]:sortType
+                    $lookup:{
+                        from:"users",
+                        localField:"owner",
+                        foreignField:"_id",
+                        as:"ownerDetails"
                     }
                 },
                 {
-                    $skip:(page-1)*limit
-                },
-                {
-                    $limit:parseInt(limit)
+                    $sort:{
+                        [sortBy]:parseInt(sortType)
+                    }
                 }
             ]
         )
+        
+        const options = {
+            page:parseInt(page),
+            limit:parseInt(limit)
+        }
 
         console.log('====================================');
         console.log(getAllVideosAggreate);
         console.log('====================================');
     
-        const fetchedVideo=Video.aggregatePaginate(getAllVideosAggreate,{page,limit})
+        const fetchedVideo=await Video.aggregatePaginate(getAllVideosAggreate,options)
     
         return res.status(200).json(
             new ApiResponse(200,fetchedVideo,"fetched all video successfully")
