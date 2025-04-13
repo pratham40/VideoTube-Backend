@@ -161,7 +161,7 @@ const updateVideo = asyncHandler(async (req, res) => {
         if (!video) {
             throw new ApiError(400,"Video file not found")
         }
-        
+
         let updatedData={}
 
         if (title) {
@@ -210,9 +210,48 @@ const updateVideo = asyncHandler(async (req, res) => {
 })
 
 
+const deleteVideo = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
+    //TODO: delete video
+
+    const video = await Video.findById(videoId)
+
+    if (!video) {
+        throw new ApiError(400,"video not found")
+    }
+
+
+    if (video.owner.toString()!=req.user._id.toString()) {
+        throw new ApiError(400,"you didn't have permission to delete this video")
+    }
+
+    if (video.videoFile) {
+        await destroyOnCloudinary(video.videoFile.public_id)
+    }
+
+    if (video.secure_url) {
+        await destroyOnCloudinary(video.secure_url.publicId)
+    }
+
+    const deleteVideo=await Video.findByIdAndDelete(videoId)
+
+    if (!deleteVideo) {
+        throw new ApiError(500,"error in deleting video")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200,
+            deleteVideo,
+            "video delete successfully"
+        )
+    )
+})
+
+
 export {
     getAllVideos,
     publishVideo,
     getVideoById,
-    updateVideo
+    updateVideo,
+    deleteVideo
 }
