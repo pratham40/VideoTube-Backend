@@ -259,6 +259,28 @@ const deleteVideo = asyncHandler(async (req, res) => {
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
 
+    const video = await Video.findById(videoId)
+
+    if (!video) {
+        throw new ApiError(400,"video not found")
+    }
+
+
+    if (video.owner.toString()!=req.user._id.toString()) {
+        throw new ApiError(400,"you don't have access to toggle status")
+    }
+
+    const toggleStatus=!video.isPublished
+
+    const updatedVideo = await Video.findByIdAndUpdate(videoId,{
+        $set:{
+            isPublished:toggleStatus
+        }
+    },{new:true})
+
+    return res.status(200).json(
+        new ApiResponse(200,updatedVideo,"video published status change")
+    )
 
 })
 
