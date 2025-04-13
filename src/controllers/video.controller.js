@@ -41,14 +41,6 @@ const getAllVideos = asyncHandler(async (req,res,next) => {
                     }
                 },
                 {
-                    $lookup:{
-                        from:"users",
-                        localField:"owner",
-                        foreignField:"_id",
-                        as:"ownerDetails"
-                    }
-                },
-                {
                     $sort:{
                         [sortBy]:parseInt(sortType)
                     }
@@ -66,9 +58,12 @@ const getAllVideos = asyncHandler(async (req,res,next) => {
         console.log('====================================');
     
         const fetchedVideo=await Video.aggregatePaginate(getAllVideosAggreate,options)
+
+        console.log(fetchedVideo);
+        
     
         return res.status(200).json(
-            new ApiResponse(200,fetchedVideo,"fetched all video successfully")
+            new ApiResponse(200,{fetchedVideo:fetchedVideo.docs},"fetched all video successfully")
         )
     } catch (error) {
         throw new ApiError(400,`error in fetching videos ${error}`)
