@@ -4,7 +4,7 @@ import { Video } from "../models/video.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { destroyOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandler(async (req,res,next) => {
     try {
@@ -125,7 +125,94 @@ const publishVideo = asyncHandler(async (req,res,next) => {
 
 })
 
+const getVideoById = asyncHandler(async (req, res) => {
+    try {
+        const { videoId } = req.params
+        //TODO: get video by id
+    
+        const video = await Video.findById(videoId)
+    
+        if (!video) {
+            throw new ApiError(400,"video not found");
+        }
+    
+        return res.status(200).json(
+            new ApiResponse(200,video,"video fetched successfully")
+        )
+    } catch (error) {
+        throw new ApiError(500,error,"error in fetching video by id");
+    }
+})
+
+
+const updateVideo = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
+    //TODO: update video details like title, description, thumbnail
+
+    const {title,description}=req.body;
+    const thumbnailFilePath = req.file?.path
+
+    if(!title && !description && !thumbnailFilePath){
+        throw new ApiError(400,"please enter either title,descripition or thumbnail file")
+    }
+
+    try {
+        const video = await Video.findById(videoId);
+        if (!video) {
+            throw new ApiError(400,"Video file not found")
+        }
+        
+        let updatedData={}
+
+        if (title) {
+            updatedData.title=title
+        }
+        if (description) {
+            updatedData.description=description
+        }
+        if (thumbnailFilePath) {
+    
+            const publicId=video.thumbnail.public_id;
+
+            await destroyOnCloudinary(publicId);
+    
+            const thumbnailFile = await uploadOnCloudinary(thumbnailFilePath)
+    
+            if (!thumbnailFile) {
+                throw new ApiError(500,"error in updating thumbnail")
+            }
+
+            updatedData.thumbnail={
+                public_id:thumbnailFile.public_id,
+                secure_url:thumbnailFile.secure_url
+            }
+        }
+
+    
+        const updateVideo=await Video.findByIdAndUpdate(videoId,{
+            $set:updatedData
+        },
+        {
+            new:true
+        })
+    
+        if (!updateVideo) {
+            throw new ApiError(500,"error in updating video detail")
+        }
+    
+        return res.status(200).json(
+            new ApiResponse(200,updateVideo,"Video updated Successfully")
+        )
+    } catch (error) {
+        throw new ApiError(500,"error in update video",error)
+    }
+
+})
+
+
 export {
     getAllVideos,
-    publishVideo
+    publishVideo,
+    getVideoById,
+    updateVideo
 }
