@@ -162,6 +162,15 @@ const updateVideo = asyncHandler(async (req, res) => {
             throw new ApiError(400,"Video file not found")
         }
 
+        const id1=video.owner.toString()
+        const id2=req.user._id.toString()
+
+        if (id1!=id2) {
+            return res.status(400).json({
+                message:"you don't have permission to access this route"
+            })
+        }
+
         let updatedData={}
 
         if (title) {
@@ -204,7 +213,7 @@ const updateVideo = asyncHandler(async (req, res) => {
             new ApiResponse(200,updateVideo,"Video updated Successfully")
         )
     } catch (error) {
-        throw new ApiError(500,"error in update video",error)
+        throw new ApiError(500,error.message)
     }
 
 })
@@ -247,11 +256,18 @@ const deleteVideo = asyncHandler(async (req, res) => {
     )
 })
 
+const togglePublishStatus = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
+
+
+})
+
 
 export {
     getAllVideos,
     publishVideo,
     getVideoById,
     updateVideo,
-    deleteVideo
+    deleteVideo,
+    togglePublishStatus
 }
