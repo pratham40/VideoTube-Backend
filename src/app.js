@@ -21,11 +21,15 @@ app.use(morgan('dev'))
 import userRouter from "./routes/user.routes.js"
 
 import videoRouter from "./routes/video.route.js"
+
+import playlistRouter from "./routes/playlist.route.js"
 //routes declaration
 
 app.use("/api/v1/user",userRouter)
 
 app.use("/api/v1/videos",videoRouter)
+
+app.use("/api/v1/playlist", playlistRouter)
 
 
 
