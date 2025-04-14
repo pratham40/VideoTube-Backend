@@ -1,4 +1,5 @@
 import { Playlist } from "../models/playlist.model.js"
+import { Video } from "../models/video.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
@@ -114,10 +115,50 @@ const deletePlaylist = asyncHandler(async (req, res) => {
     
 })
 
+const addVideoToPlaylist = asyncHandler(async (req, res) => {
+    const {playlistId, videoId} = req.params
+
+    const playlist = await Playlist.findById(playlistId)
+
+    if (!playlist) {
+        throw new ApiError(400,"playlist not found")
+    }
+
+    if (playlist.owner.toString()!=req.user._id.toString()) {
+        throw new ApiError(400,"access denied to add video to playlist")
+    }
+    
+
+    const video = await Video.findById(videoId)
+
+    if (!video) {
+        throw new ApiError(400,"video not found")
+    }
+
+    if (playlist.videos.includes(videoId)) {
+        throw new ApiError(400,"video already exist in playlist")
+    }
+
+    const addToPlaylist = await Playlist.findByIdAndUpdate(playlistId,{
+        $push:{
+            videos:videoId
+        }
+    },{new:true})
+
+    if (!addToPlaylist) {
+        throw new ApiError(500,"error in adding video to playlist")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200,addToPlaylist,"add video to playlist successfully")
+    )
+})
+
 
 export {
     createPlaylist,
     getPlaylistById,
     updatePlaylist,
-    deletePlaylist
+    deletePlaylist,
+    addVideoToPlaylist
 }
