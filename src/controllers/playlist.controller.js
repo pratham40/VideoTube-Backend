@@ -84,8 +84,40 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     )
 })
 
+const deletePlaylist = asyncHandler(async (req, res) => {
+    const {playlistId} = req.params
+    // TODO: delete playlist
+
+    const playlist = await Playlist.findById(playlistId)
+
+    if (!playlist) {
+        throw new ApiError(400,"playlist not found")
+    }
+
+    if (playlist.owner.toString()!=req.user._id.toString()) {
+        throw new ApiError(400,"acess denied to delete playlist")
+    }
+
+    const deletePlaylist = await Playlist.deleteOne({
+        _id:playlistId
+    })
+
+    console.log(deletePlaylist);
+
+    if (!deletePlaylist) {
+        throw new ApiError(500,"error in updating playlist")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200,deletePlaylist,"playlist delete successfully")
+    )
+    
+})
+
+
 export {
     createPlaylist,
     getPlaylistById,
-    updatePlaylist
+    updatePlaylist,
+    deletePlaylist
 }
