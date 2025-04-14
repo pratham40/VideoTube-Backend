@@ -42,8 +42,50 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     )
 })
 
+const updatePlaylist = asyncHandler(async (req, res) => {
+    const {playlistId} = req.params
+    const {name, description} = req.body
+    //TODO: update playlist
+
+    const playlist = await Playlist.findById(playlistId)
+
+    if (!playlist) {
+        throw new ApiError(400,"playlist not found")
+    }
+
+    if (playlist.owner.toString()!=req.user._id.toString()) {
+        throw new ApiError(400,"access denied to update playlist")
+    }
+
+    if (!name && !description) {
+        throw new ApiError(400,"please add either name or description of playlist")
+    }
+
+    let update={}
+
+    if (name) {
+        update.name=name
+    }
+
+    if (description) {
+        update.description=description
+    }
+
+    const updatePlaylist=await Playlist.findByIdAndUpdate(playlistId,{
+        $set:update
+    },{new:true})
+
+    if (!updatePlaylist) {
+        throw new ApiError(500,"something went wrong while updating playlist")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200,updatePlaylist,"playlist update successfully")
+    )
+})
 
 export {
     createPlaylist,
-    getPlaylistById
+    getPlaylistById,
+    updatePlaylist
 }
