@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Comment } from "../models/comment.model.js";
 import { Video } from "../models/video.model.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -36,6 +37,48 @@ const addComment = asyncHandler(async (req, res) => {
 })
 
 
+const getVideoComments = asyncHandler(async (req, res) => {
+    //TODO: get all comments for a video
+    const {videoId} = req.params
+    const {page = 1, limit = 3} = req.query
+
+    const video = await Video.findById(videoId)
+
+    if (!video) {
+        throw new ApiError(404,"video not found")
+    }
+
+    const videoComments = Comment.aggregate([
+        {
+            $match:{
+                video:new mongoose.Types.ObjectId(videoId)
+            }
+        },
+        {
+            $sort:{
+                createdAt:-1
+            }
+        }
+    ])
+
+    const options = {
+        page:parseInt(page),
+        limit:parseInt(limit)
+    }
+    
+    const aggregateComments=await Comment.aggregatePaginate(videoComments,options)
+
+    if (!aggregateComments) {
+        throw new ApiError(500,"error in while fetching video comments")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200,aggregateComments,"video comment fetched successfully")
+    )
+})
+
+
 export {
-    addComment
+    addComment,
+    getVideoComments
 }
