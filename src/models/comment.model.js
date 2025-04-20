@@ -1,5 +1,5 @@
-const { Schema, default: mongoose } = require("mongoose");
-const mongooseAggregatePaginate = require("mongoose-aggregate-paginate-v2");
+import mongoose , {Schema} from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const commentSchema = new Schema({
     content:{
