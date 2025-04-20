@@ -1,4 +1,5 @@
 import { Playlist } from "../models/playlist.model.js"
+import { User } from "../models/user.model.js"
 import { Video } from "../models/video.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
@@ -155,10 +156,76 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
 })
 
 
+const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
+    const {playlistId, videoId} = req.params
+    // TODO: remove video from playlist
+
+    const playlist = await Playlist.findById(playlistId)
+
+    if (playlist.owner.toString()!=req.user._id) {
+        throw new ApiError(400,"acess denied to remove video from playlist")
+    }
+
+    if (!playlist) {
+        throw new ApiError(400,"playlist not found")
+    }
+
+    const video = await Video.findById(videoId);
+
+    if (!video) {
+        throw new ApiError(400,"video not found")
+    }
+
+    if(!playlist.videos.includes(videoId)){
+        throw new ApiError(400,"video doesn't exist in playlist")
+    }
+
+    const updatePlaylist=await Playlist.findByIdAndUpdate(playlistId,{
+       $pull:{
+            videos:videoId
+       }
+    },{new:true})
+
+    if (!updatePlaylist) {
+        throw new ApiError(500,"something went wrong while removing video from playlist")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200,updatePlaylist,"video delete from playlist successfully")
+    )
+})
+
+const getUserPlaylists = asyncHandler(async (req, res) => {
+    const {userId} = req.params
+    //TODO: get user playlists
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+        throw new ApiError(400,"user doesn't exist")
+    }
+
+    const playlist = await Playlist.find({
+        owner:userId
+    }).populate("videos")
+    
+
+    if (!playlist) {
+        throw new ApiError(500,"error while fetching playlist")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200,playlist,"playlist fetched successfully of user")
+    )
+})
+
+
 export {
     createPlaylist,
     getPlaylistById,
     updatePlaylist,
     deletePlaylist,
-    addVideoToPlaylist
+    addVideoToPlaylist,
+    removeVideoFromPlaylist,
+    getUserPlaylists
 }
