@@ -78,7 +78,40 @@ const getVideoComments = asyncHandler(async (req, res) => {
 })
 
 
+const updateComment = asyncHandler(async (req, res) => {
+    // TODO: update a comment
+    const {commentId} = req.params
+
+    const {updateComment} = req.body
+
+    const comment = await Comment.findById(commentId)
+
+    if (!comment) {
+        throw new ApiError(404,"comment not found")
+    }
+
+    const updatedComment = await Comment.findByIdAndUpdate(commentId,{
+        $set:{
+            content:updateComment
+        }
+    },{new:true})
+
+    if (!updateComment) {
+        throw new ApiError(500,"error in updating comment")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200,updateComment,"comment update successfully")
+    )
+
+})
+
+
+
+
+
 export {
     addComment,
-    getVideoComments
+    getVideoComments,
+    updateComment,
 }
