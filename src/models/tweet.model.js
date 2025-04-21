@@ -1,4 +1,4 @@
-const { Schema, default: mongoose } = require("mongoose");
+import mongoose , {Schema} from "mongoose"
 
 const tweetSchema = new Schema({
     content:{
