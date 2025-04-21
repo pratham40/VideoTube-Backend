@@ -1,3 +1,4 @@
+import { isValidObjectId } from "mongoose";
 import { Tweet } from "../models/tweet.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -27,6 +28,47 @@ const createTweet = asyncHandler(async (req, res) => {
 })
 
 
+const updateTweet = asyncHandler(async (req, res) => {
+    //TODO: update tweet
+    const {updatedContent} = req.body
+
+    const {tweetId} = req.params
+
+    if (!isValidObjectId(tweetId)) {
+        throw new ApiError(400,"tweet id is not valid")
+    }
+
+    const tweet = await Tweet.findById(tweetId)
+
+    if (!tweet) {
+        throw new ApiError(404,"tweet doesn't found")
+    }
+
+    if (!updatedContent) {
+        throw new ApiError(400,"updated content required")
+    }
+
+    if (tweet.owner.toString()!=req.user._id.toString()) {
+        throw new ApiError(400,"access denied for updating tweet")
+    }
+
+    const updatedTweet = await Tweet.findByIdAndUpdate(tweetId,{
+        $set:{
+            content:updatedContent
+        }
+    },{new:true})
+
+    if (!updatedTweet) {
+        throw new ApiError(500,"error in updating tweet")
+    }
+
+
+    return res.status(200).json(
+        new ApiResponse(200,updatedTweet,"tweet update successfully")
+    )
+})
+
 export {
-    createTweet
+    createTweet,
+    updateTweet
 }
