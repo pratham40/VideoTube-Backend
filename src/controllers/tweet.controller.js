@@ -3,6 +3,7 @@ import { Tweet } from "../models/tweet.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { User } from "../models/user.model.js";
 
 const createTweet = asyncHandler(async (req, res) => {
     //TODO: create tweet
@@ -75,6 +76,15 @@ const deleteTweet = asyncHandler(async (req, res) => {
     if (!isValidObjectId(tweetId)) {
         throw new ApiError(400,"tweet id is invalid")
     }
+    const tweet = await Tweet.findById(tweetId)
+
+    if (!tweet) {
+        throw new ApiError(404,"tweet doesn't found")
+    }
+
+    if (tweet.owner.toString()!=req.user._id.toString()) {
+        throw new ApiError(400,"access denied for deleting tweet")
+    }
 
     const deletedTweet = await Tweet.findByIdAndDelete(tweetId)
 
@@ -87,8 +97,31 @@ const deleteTweet = asyncHandler(async (req, res) => {
     )
 })
 
+const getUserTweets = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+
+    if (!isValidObjectId(userId)) {
+        throw new ApiError(400, "Invalid userId");
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    const allUserTweets = await Tweet.find({ owner: userId })
+        .populate("content")
+
+    return res.status(200).json(
+        new ApiResponse(200, allUserTweets, "User tweets fetched successfully")
+    );
+});
+
+
+
 export {
     createTweet,
     updateTweet,
-    deleteTweet
+    deleteTweet,
+    getUserTweets
 }
